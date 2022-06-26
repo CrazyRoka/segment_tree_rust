@@ -4,20 +4,20 @@ use super::SegmentTreeComputation;
 
 pub struct MaxComputation;
 
-impl<T> SegmentTreeComputation<T> for MaxComputation
+impl<T> SegmentTreeComputation<T, T> for MaxComputation
 where
-    T: Ord,
+    T: Ord + Clone,
 {
-    fn combine(left_result: T, right_result: T) -> T {
-        left_result.max(right_result)
+    fn combine(left_result: &T, right_result: &T) -> T {
+        left_result.max(right_result).clone()
     }
 
-    fn update(_: T, new_value: T) -> T {
-        new_value
+    fn update(_: &T, new_value: &T) -> T {
+        new_value.clone()
     }
 
-    fn init(value: T) -> T {
-        value
+    fn init(value: &T) -> T {
+        value.clone()
     }
 }
 
@@ -31,7 +31,7 @@ mod tests {
 
         for value in tests {
             let expected = value;
-            let actual = MaxComputation::init(value);
+            let actual = MaxComputation::init(&value);
 
             assert_eq!(expected, actual);
         }
@@ -43,7 +43,7 @@ mod tests {
 
         for (prev, cur) in tests {
             let expected = cur;
-            let actual = MaxComputation::update(prev, cur);
+            let actual = MaxComputation::update(&prev, &cur);
 
             assert_eq!(expected, actual);
         }
@@ -60,7 +60,7 @@ mod tests {
         ];
 
         for (prev, cur, expected) in tests {
-            let actual = MaxComputation::combine(prev, cur);
+            let actual = MaxComputation::combine(&prev, &cur);
 
             assert_eq!(expected, actual);
         }

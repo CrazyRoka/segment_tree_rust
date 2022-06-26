@@ -4,10 +4,10 @@ pub use sum::SumComputation;
 mod max;
 mod sum;
 
-pub trait SegmentTreeComputation<T> {
-    fn combine(left_result: T, right_result: T) -> T;
+pub trait SegmentTreeComputation<I, O> {
+    fn combine(left_result: &O, right_result: &O) -> O;
 
-    fn update(prev_value: T, new_value: T) -> T;
+    fn update(prev_value: &O, new_value: &I) -> O;
 
-    fn init(value: T) -> T;
+    fn init(value: &I) -> O;
 }

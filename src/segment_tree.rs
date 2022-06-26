@@ -4,21 +4,24 @@ use crate::{
 };
 use std::marker::PhantomData;
 
-pub struct SegmentTree<T, K> {
-    data: Vec<T>,
+pub struct SegmentTree<I, O, C>
+where
+    C: SegmentTreeComputation<I, O>,
+{
+    data: Vec<O>,
     len: usize,
-    phantom: PhantomData<K>,
+    phantom: PhantomData<(C, I)>,
 }
 
-pub type SumSegmentTree<T> = SegmentTree<T, SumComputation>;
-pub type MaxSegmentTree<T> = SegmentTree<T, MaxComputation>;
+pub type SumSegmentTree<T> = SegmentTree<T, T, SumComputation>;
+pub type MaxSegmentTree<T> = SegmentTree<T, T, MaxComputation>;
 
-impl<T, K> SegmentTree<T, K>
+impl<I, O, C> SegmentTree<I, O, C>
 where
-    T: Default + Clone + Copy,
-    K: SegmentTreeComputation<T>,
+    O: Default + Clone + Copy,
+    C: SegmentTreeComputation<I, O>,
 {
-    pub fn build(arr: &[T]) -> Self {
+    pub fn build(arr: &[I]) -> Self {
         if arr.is_empty() {
             Self {
                 data: vec![],
@@ -27,7 +30,7 @@ where
             }
         } else {
             let len = arr.len();
-            let mut data = vec![T::default(); len * 4];
+            let mut data = vec![O::default(); len * 4];
 
             Self::internal_build(arr, &mut data, 1, 0, len - 1);
 
@@ -39,7 +42,7 @@ where
         }
     }
 
-    pub fn get(&self, left: usize, right: usize) -> SegmentTreeResult<T> {
+    pub fn get(&self, left: usize, right: usize) -> SegmentTreeResult<O> {
         if left > right {
             Err(SegmentTreeError::InvalidRange { left, right })
         } else if right >= self.len {
@@ -52,7 +55,7 @@ where
         }
     }
 
-    pub fn modify(&mut self, pos: usize, value: T) -> SegmentTreeResult<()> {
+    pub fn modify(&mut self, pos: usize, value: &I) -> SegmentTreeResult<()> {
         if pos >= self.len {
             Err(SegmentTreeError::OutOfBounds {
                 index: pos,
@@ -73,20 +76,20 @@ where
     }
 
     fn internal_build(
-        input: &[T],
-        data: &mut Vec<T>,
+        input: &[I],
+        data: &mut Vec<O>,
         index: usize,
         cur_left: usize,
         cur_right: usize,
     ) {
         data[index] = if cur_left == cur_right {
-            K::init(input[cur_left])
+            C::init(&input[cur_left])
         } else {
             let mid = (cur_left + cur_right) / 2;
             Self::internal_build(input, data, index * 2, cur_left, mid);
             Self::internal_build(input, data, index * 2 + 1, mid + 1, cur_right);
 
-            K::combine(data[index * 2], data[index * 2 + 1])
+            C::combine(&data[index * 2], &data[index * 2 + 1])
         }
     }
 
@@ -97,7 +100,7 @@ where
         cur_right: usize,
         left: usize,
         right: usize,
-    ) -> T {
+    ) -> O {
         if left == cur_left && right == cur_right {
             self.data[index]
         } else {
@@ -112,7 +115,7 @@ where
                 let right_result =
                     self.internal_get(index * 2 + 1, mid + 1, cur_right, left.max(mid + 1), right);
 
-                K::combine(left_result, right_result)
+                C::combine(&left_result, &right_result)
             }
         }
     }
@@ -123,11 +126,11 @@ where
         cur_left: usize,
         cur_right: usize,
         pos: usize,
-        value: T,
+        value: &I,
     ) {
         dbg!(index, cur_left, cur_right, pos);
         self.data[index] = if cur_left == cur_right {
-            K::update(self.data[index], value)
+            C::update(&self.data[index], value)
         } else {
             let mid = (cur_left + cur_right) / 2;
 
@@ -137,7 +140,7 @@ where
                 self.internal_modify(index * 2 + 1, mid + 1, cur_right, pos, value);
             }
 
-            K::combine(self.data[index * 2], self.data[index * 2 + 1])
+            C::combine(&self.data[index * 2], &self.data[index * 2 + 1])
         }
     }
 }
@@ -194,7 +197,7 @@ mod tests {
             assert_eq!(actual, expected);
 
             let expected = Err(SegmentTreeError::OutOfBounds { index: 0, len: 0 });
-            let actual = tree.modify(0, value);
+            let actual = tree.modify(0, &value);
 
             assert_eq!(actual, expected);
         }
@@ -263,8 +266,8 @@ mod tests {
         let mut tree = SumSegmentTree::build(&arr);
 
         assert!(!tree.is_empty());
-        assert_eq!(tree.modify(3, 10), Ok(()));
-        assert_eq!(tree.modify(1, 73), Ok(()));
+        assert_eq!(tree.modify(3, &10), Ok(()));
+        assert_eq!(tree.modify(1, &73), Ok(()));
 
         /*
                   91
