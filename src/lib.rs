@@ -1,9 +1,8 @@
-pub use crate::computation::SegmentTreeComputation;
-pub use crate::errors::SegmentTreeError;
-pub use crate::errors::SegmentTreeResult;
-pub use crate::segment_tree::MaxSegmentTree;
-pub use crate::segment_tree::SegmentTree;
-pub use crate::segment_tree::SumSegmentTree;
+pub use crate::{
+    computation::SegmentTreeComputation,
+    errors::{SegmentTreeError, SegmentTreeResult},
+    segment_tree::{MaxSegmentTree, MaxSliceSumSegmentTree, SegmentTree, SumSegmentTree},
+};
 
 mod computation;
 mod errors;

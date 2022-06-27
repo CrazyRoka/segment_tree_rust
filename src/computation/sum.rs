@@ -1,18 +1,24 @@
 use super::SegmentTreeComputation;
-use std::ops::Add;
+use std::{marker::PhantomData, ops::Add};
 
-pub struct SumComputation;
+pub struct SumComputation<T> {
+    phantom: PhantomData<T>,
+}
 
-impl<T> SegmentTreeComputation<T, T> for SumComputation
+impl<T> SegmentTreeComputation for SumComputation<T>
 where
     T: Add<Output = T> + Clone,
 {
+    type Input = T;
+
+    type Output = T;
+
     fn combine(left_result: &T, right_result: &T) -> T {
         left_result.clone() + right_result.clone()
     }
 
     fn update(_: &T, new_value: &T) -> T {
-        new_value.clone()
+        Self::init(new_value)
     }
 
     fn init(value: &T) -> T {

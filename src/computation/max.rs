@@ -1,19 +1,25 @@
-use std::cmp::Ord;
+use std::{cmp::Ord, marker::PhantomData};
 
 use super::SegmentTreeComputation;
 
-pub struct MaxComputation;
+pub struct MaxComputation<T> {
+    phantom: PhantomData<T>,
+}
 
-impl<T> SegmentTreeComputation<T, T> for MaxComputation
+impl<T> SegmentTreeComputation for MaxComputation<T>
 where
     T: Ord + Clone,
 {
+    type Input = T;
+
+    type Output = T;
+
     fn combine(left_result: &T, right_result: &T) -> T {
         left_result.max(right_result).clone()
     }
 
     fn update(_: &T, new_value: &T) -> T {
-        new_value.clone()
+        Self::init(new_value)
     }
 
     fn init(value: &T) -> T {

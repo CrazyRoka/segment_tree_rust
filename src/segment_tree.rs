@@ -1,25 +1,28 @@
 use crate::{
-    computation::{MaxComputation, SegmentTreeComputation, SumComputation},
+    computation::{
+        MaxComputation, MaxSliceSum, MaxSliceSumComputation, SegmentTreeComputation, SumComputation,
+    },
     errors::{SegmentTreeError, SegmentTreeResult},
 };
 use std::marker::PhantomData;
 
 pub struct SegmentTree<I, O, C>
 where
-    C: SegmentTreeComputation<I, O>,
+    C: SegmentTreeComputation,
 {
     data: Vec<O>,
     len: usize,
     phantom: PhantomData<(C, I)>,
 }
 
-pub type SumSegmentTree<T> = SegmentTree<T, T, SumComputation>;
-pub type MaxSegmentTree<T> = SegmentTree<T, T, MaxComputation>;
+pub type SumSegmentTree<T> = SegmentTree<T, T, SumComputation<T>>;
+pub type MaxSegmentTree<T> = SegmentTree<T, T, MaxComputation<T>>;
+pub type MaxSliceSumSegmentTree<T> = SegmentTree<T, MaxSliceSum<T>, MaxSliceSumComputation<T>>;
 
 impl<I, O, C> SegmentTree<I, O, C>
 where
     O: Default + Clone + Copy,
-    C: SegmentTreeComputation<I, O>,
+    C: SegmentTreeComputation<Input = I, Output = O>,
 {
     pub fn build(arr: &[I]) -> Self {
         if arr.is_empty() {
@@ -128,7 +131,6 @@ where
         pos: usize,
         value: &I,
     ) {
-        dbg!(index, cur_left, cur_right, pos);
         self.data[index] = if cur_left == cur_right {
             C::update(&self.data[index], value)
         } else {
@@ -148,7 +150,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::{MaxSegmentTree, SumSegmentTree};
-    use crate::{SegmentTreeError, SegmentTreeResult};
+    use crate::{
+        computation::MaxSliceSum, MaxSliceSumSegmentTree, SegmentTreeError, SegmentTreeResult,
+    };
     use std::fmt::Debug;
 
     #[test]
@@ -307,6 +311,24 @@ mod tests {
         for left in 0..arr.len() {
             for right in left..arr.len() {
                 let expected: SegmentTreeResult<T> = Ok(*arr[left..=right].iter().max().unwrap());
+                let actual = tree.get(left, right);
+
+                assert_eq!(actual, expected);
+            }
+        }
+    }
+
+    #[test]
+    fn test_max_slice_sum_segment_tree() {
+        let arr = [1, 3, 7, 27, 73, 7542, 1, -5, -543, 9];
+        let tree = MaxSliceSumSegmentTree::build(&arr);
+
+        assert!(!tree.is_empty());
+        assert_eq!(tree.len(), arr.len());
+
+        for left in 0..arr.len() {
+            for right in left..arr.len() {
+                let expected = Ok(MaxSliceSum::from_slice(&arr[left..=right]));
                 let actual = tree.get(left, right);
 
                 assert_eq!(actual, expected);
